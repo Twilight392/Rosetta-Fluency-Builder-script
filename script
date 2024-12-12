@@ -1,0 +1,144 @@
+function getRandomInt(min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function generateRandomNumbers(length) {
+    const indices = Array.from({ length }, (_, i) => i); 
+    for (let i = indices.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [indices[i], indices[j]] = [indices[j], indices[i]]; 
+    }
+    return indices;
+}
+
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function runAutomation() {
+    let submitBtn;
+    const activitiesTitle = document.querySelectorAll('[data-qa=ActivityMapTitle]');
+    const courses = document.querySelectorAll('[data-qa=LaunchCourseButton]');
+    const launchBtns = document.querySelectorAll('[data-qa=LaunchButton]');
+    const startTime = Date.now();
+    const maxDuration = 60 * 60 * 1000;
+    const runtimes = 100;
+
+    try {
+        courses[getRandomInt(0, courses.length - 1)].click();
+    } catch (error) {
+        console.log("Erreur lors du clic sur le cours :", error);
+    }
+
+    await sleep(500);
+
+    try {
+        launchBtns[getRandomInt(0, launchBtns.length - 1)].click();
+    } catch (error) {
+        console.log("Erreur lors du clic sur le bouton de lancement :", error);
+    }
+
+    while (Date.now() - startTime < maxDuration) { 
+        for (let runtime = 0; runtime < runtimes; runtime++) {
+            for (let i = 0; i < activitiesTitle.length; i++) {
+                const activity = activitiesTitle[i];
+                if (!activity) {
+                    console.log(`L'activité à l'index ${i} est nulle.`);
+                    continue;
+                }
+                console.log(activity.innerText);
+                activity.click();
+                await sleep(2000);
+
+                if (activity.innerText === "Multiple Choice") {
+                    const choices = document.querySelectorAll('[data-qa=ChoiceButton]');
+                    submitBtn = document.querySelector('[data-qa=SubmitButton]');
+                    for (const choice of choices) {
+                        choice.click();
+                        await sleep(750);
+                        submitBtn.click();
+                        await sleep(500);
+                        submitBtn = document.querySelector('[data-qa=SubmitButton]');
+                        if (submitBtn.innerText === 'Next Activity') submitBtn.click();
+                    }
+                }
+                else if (activity.innerText == "Fill in the Blank") {
+                    const menuBtns = document.querySelectorAll('[data-qa = MenuButton]');
+                    for (const btn of menuBtns) {
+                        btn.click();
+                        await sleep(500);
+
+                        const menuList = document.querySelector('[data-qa = MenuList]').children;
+                        menuList[getRandomInt(0, menuList.length - 1)].click();
+                        await sleep(250);
+                    }
+                    submitBtn = document.querySelector('[data-qa = SubmitButton]');
+                    submitBtn.click();
+                }
+                else if (activity.innerText == "Vocabulary" || activity.innerText == "Explanation") {
+                    const navForwardBtn = document.querySelector("[data-qa = NavigateForwardButton]");
+                    const listItem = document.querySelectorAll("[data-qa = ListItem]");
+                    for (const item of listItem) {
+                        item.click();
+                        await sleep(500);
+                    }
+                    submitBtn = document.querySelector('[data-qa = SubmitButton]');
+                    submitBtn.click();                    
+                }
+                else if (activity.innerText == "Matching") {
+                    const texToDrag = document.querySelectorAll("[data-qa='DragDropText']");
+                    const texToDragContainer = document.querySelectorAll('div[class*="DragDropTextContainer"]');
+                    const indexs = generateRandomNumbers(texToDrag.length);
+                
+                    for (let i = 0; i < indexs.length; i++) {
+                        const I = indexs[i];
+                        const text = texToDrag[I];
+                        const container = texToDragContainer[i];
+                
+                        container.appendChild(text);
+                        await sleep(250);
+                    }
+                    await sleep(250 * indexs.length);
+                    submitBtn = document.querySelector('[data-qa = SubmitButton]');
+                    submitBtn.click();   
+                }
+                else if (activity.innerText == "Arranging") {
+                    const DraggableSentences = document.querySelectorAll("[data-qa = DraggableSentenceItem]");
+                    
+                    if (DraggableSentences.length > 0) {
+                        const parent = DraggableSentences[0].parentElement;
+
+                        for (const sentence of DraggableSentences) {
+                            parent.appendChild(sentence);    
+                        }
+
+                        submitBtn = document.querySelector('[data-qa = SubmitButton]');
+                        submitBtn.click();
+                    } else {
+                        console.log("Aucune phrase draggable trouvée.");
+                    }
+                }
+                await sleep(1000);
+            }
+            await sleep(2000);
+
+            if (Date.now() - startTime >= maxDuration) {
+                console.log("1 heure écoulée. Arrêt du script.");
+                return; 
+            }
+        }
+    }
+}
+
+async function main() {
+    while (true) {
+        try {
+            await runAutomation();
+            break; 
+        } catch (error) {
+            console.log("Une erreur s'est produite, redémarrage :", error);
+        }
+    }
+}
+
+main();
