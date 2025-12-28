@@ -1,4 +1,4 @@
-Place the content of "Script.txt" in console tab in Inscpet While you are inside a lesson in Fluency builder.
+Place the content of "Script.txt" in console tab in Inscpet while you are inside a lesson in Fluency builder.
 
 Leave it for the duration you want to add.
 
